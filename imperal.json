@@ -1,0 +1,872 @@
+{
+  "manifest_schema_version": 3,
+  "sdk_version": "5.9.12",
+  "app_id": "keragon-connector",
+  "version": "0.1.0",
+  "name": "Keragon",
+  "description": "Two-way webhook bridge between Imperal and Keragon, the HIPAA-compliant healthcare automation platform. Fire any number of named Keragon workflows from Imperal by POSTing to their HTTP Webhook Trigger URLs, and receive callbacks a Keragon workflow's HTTP Client action step sends back into Imperal -- plus bulk fan-out, delivery history, and templated healthcare event payloads Imperal builds on top. Keragon exposes no general workflow-management API (see this app's own notes), so this is deliberately a webhook bridge, not a CRUD connector.",
+  "icon": "icon.svg",
+  "actions_explicit": true,
+  "system": false,
+  "capabilities": [
+    "keragon:read",
+    "keragon:write"
+  ],
+  "tools": [
+    {
+      "name": "create_outgoing_bridge",
+      "description": "Register a new named bridge to a Keragon workflow -- paste the workflow's HTTP Webhook Trigger URL (from the trigger step's setup screen inside Keragon) and give it a short label so you can fire it by name later with send_bridge_event.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "keragon.outgoing_bridge.created"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "name": {
+            "description": "Short label for this bridge, e.g. 'New patient intake'.",
+            "title": "Name",
+            "type": "string"
+          },
+          "webhook_url": {
+            "description": "The Keragon workflow's HTTP Webhook Trigger URL, copied from the trigger step's setup screen inside Keragon.",
+            "title": "Webhook Url",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "description": "Optional note on what this workflow does or when it fires.",
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "webhook_url"
+        ],
+        "title": "CreateOutgoingBridgeParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "created_at": {
+            "default": "",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_url": {
+            "default": false,
+            "title": "Has Url",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "OutgoingBridgeEntry",
+        "type": "object"
+      },
+      "event": "keragon-connector.create_outgoing_bridge",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "list_outgoing_bridges",
+      "description": "List your configured outgoing bridges to Keragon workflows -- names and descriptions only, never the underlying trigger URLs.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "description": "Empty params for read-only calls that take no arguments.",
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "OutgoingBridgeEntry": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "description": {
+                "default": "",
+                "title": "Description",
+                "type": "string"
+              },
+              "created_at": {
+                "default": "",
+                "title": "Created At",
+                "type": "string"
+              },
+              "has_url": {
+                "default": false,
+                "title": "Has Url",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "OutgoingBridgeEntry",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "bridges": {
+            "items": {
+              "$ref": "#/$defs/OutgoingBridgeEntry"
+            },
+            "title": "Bridges",
+            "type": "array"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "title": "OutgoingBridgeList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "get_outgoing_bridge",
+      "description": "Read one outgoing bridge's name and description by id (never the underlying trigger URL).",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "bridge_id": {
+            "description": "Bridge id, from list_outgoing_bridges.",
+            "title": "Bridge Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bridge_id"
+        ],
+        "title": "GetOutgoingBridgeParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "created_at": {
+            "default": "",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_url": {
+            "default": false,
+            "title": "Has Url",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "OutgoingBridgeEntry",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "update_outgoing_bridge",
+      "description": "Update an existing outgoing bridge's name, trigger URL, and/or description. Only given fields change.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "keragon.outgoing_bridge.updated"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "bridge_id": {
+            "description": "Bridge id, from list_outgoing_bridges.",
+            "title": "Bridge Id",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "description": "New label. Empty leaves it unchanged.",
+            "title": "Name",
+            "type": "string"
+          },
+          "webhook_url": {
+            "default": "",
+            "description": "New Keragon HTTP Webhook Trigger URL. Empty leaves it unchanged.",
+            "title": "Webhook Url",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "description": "New description. Empty leaves it unchanged.",
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bridge_id"
+        ],
+        "title": "UpdateOutgoingBridgeParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "created_at": {
+            "default": "",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_url": {
+            "default": false,
+            "title": "Has Url",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "OutgoingBridgeEntry",
+        "type": "object"
+      },
+      "event": "keragon-connector.update_outgoing_bridge",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "delete_outgoing_bridge",
+      "description": "Permanently remove an outgoing bridge. Cannot be undone -- the Keragon workflow itself is unaffected, only Imperal forgets its URL.",
+      "action_type": "destructive",
+      "chain_callable": true,
+      "effects": [
+        "keragon.outgoing_bridge.deleted"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "bridge_id": {
+            "description": "Bridge id to permanently remove, from list_outgoing_bridges.",
+            "title": "Bridge Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bridge_id"
+        ],
+        "title": "DeleteOutgoingBridgeParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deleted"
+        ],
+        "title": "DeleteResult",
+        "type": "object"
+      },
+      "event": "keragon-connector.delete_outgoing_bridge",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "send_bridge_event",
+      "description": "Fire one configured Keragon workflow right now by POSTing a JSON payload to its HTTP Webhook Trigger URL. Run create_outgoing_bridge first if you haven't registered this workflow yet.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "keragon.bridge.sent"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "bridge_id": {
+            "description": "Which bridge (Keragon workflow trigger) to fire, from list_outgoing_bridges.",
+            "title": "Bridge Id",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "description": "Arbitrary JSON payload to POST to that workflow's HTTP Webhook Trigger URL -- e.g. patient/appointment fields the workflow expects.",
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "bridge_id"
+        ],
+        "title": "SendBridgeEventParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "delivered": {
+            "title": "Delivered",
+            "type": "boolean"
+          },
+          "status_code": {
+            "default": 0,
+            "title": "Status Code",
+            "type": "integer"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "delivered"
+        ],
+        "title": "WebhookDeliveryResult",
+        "type": "object"
+      },
+      "event": "keragon-connector.send_bridge_event",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "bulk_send_bridge_event",
+      "description": "Fire the SAME payload to several configured Keragon workflows in one call -- e.g. notify both 'New patient intake' and 'Slack alert' bridges at once. Continues past per-bridge failures and reports each outcome. This is an Imperal-side convenience -- Keragon itself has no bulk-trigger endpoint.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "keragon.bridge.sent"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "bridge_ids": {
+            "description": "Which bridges to fire, from list_outgoing_bridges. 1-20 per call.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Bridge Ids",
+            "type": "array"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "description": "Same JSON payload POSTed to every listed bridge's Keragon workflow trigger.",
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "bridge_ids"
+        ],
+        "title": "BulkSendBridgeEventParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "BulkDeliveryItem": {
+            "properties": {
+              "bridge_id": {
+                "title": "Bridge Id",
+                "type": "string"
+              },
+              "name": {
+                "default": "",
+                "title": "Name",
+                "type": "string"
+              },
+              "delivered": {
+                "title": "Delivered",
+                "type": "boolean"
+              },
+              "status_code": {
+                "default": 0,
+                "title": "Status Code",
+                "type": "integer"
+              },
+              "detail": {
+                "default": "",
+                "title": "Detail",
+                "type": "string"
+              }
+            },
+            "required": [
+              "bridge_id",
+              "delivered"
+            ],
+            "title": "BulkDeliveryItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/$defs/BulkDeliveryItem"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "sent": {
+            "default": 0,
+            "title": "Sent",
+            "type": "integer"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "title": "BulkDeliveryResult",
+        "type": "object"
+      },
+      "event": "keragon-connector.bulk_send_bridge_event",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "get_inbound_webhook_config",
+      "description": "Read the inbound webhook URL and whether a shared secret is set up for receiving events FROM a Keragon workflow (via its 'HTTP Client action' step). Never reveals the secret itself.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "description": "Empty params for read-only calls that take no arguments.",
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "webhook_url": {
+            "default": "",
+            "title": "Webhook Url",
+            "type": "string"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "configured"
+        ],
+        "title": "InboundWebhookConfig",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "regenerate_inbound_secret",
+      "description": "Generate a fresh shared secret for the inbound direction (Keragon -> Imperal), discarding any previous one. Paste the new value into a custom header named X-Keragon-Webhook-Secret on your workflow's 'HTTP Client action' step.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "keragon.inbound_secret.rotated"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {},
+        "title": "RegenerateInboundSecretParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "webhook_url": {
+            "default": "",
+            "title": "Webhook Url",
+            "type": "string"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "configured"
+        ],
+        "title": "InboundWebhookConfig",
+        "type": "object"
+      },
+      "event": "keragon-connector.regenerate_inbound_secret",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "list_inbound_events",
+      "description": "List the most recent events a Keragon workflow has POSTed into this app via the inbound webhook, newest first. Optionally filter by event_kind.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "event_kind": {
+            "default": "",
+            "description": "Optional free-text filter, e.g. 'appointment_reminder'. Empty returns every kind.",
+            "title": "Event Kind",
+            "type": "string"
+          }
+        },
+        "title": "ListInboundEventsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "InboundEventSummary": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "received_at": {
+                "title": "Received At",
+                "type": "string"
+              },
+              "event_kind": {
+                "default": "",
+                "title": "Event Kind",
+                "type": "string"
+              },
+              "bridge_id": {
+                "default": "",
+                "title": "Bridge Id",
+                "type": "string"
+              },
+              "payload_preview": {
+                "default": "",
+                "title": "Payload Preview",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "received_at"
+            ],
+            "title": "InboundEventSummary",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/$defs/InboundEventSummary"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "title": "InboundEventList",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "get_inbound_event",
+      "description": "Get the full stored body and headers preview of one inbound event, by id from list_inbound_events.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "event_id": {
+            "description": "Event id, from list_inbound_events.",
+            "title": "Event Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "title": "GetInboundEventParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "received_at": {
+            "title": "Received At",
+            "type": "string"
+          },
+          "event_kind": {
+            "default": "",
+            "title": "Event Kind",
+            "type": "string"
+          },
+          "bridge_id": {
+            "default": "",
+            "title": "Bridge Id",
+            "type": "string"
+          },
+          "headers_preview": {
+            "default": "",
+            "title": "Headers Preview",
+            "type": "string"
+          },
+          "body": {
+            "default": "",
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "received_at"
+        ],
+        "title": "InboundEventDetail",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    },
+    {
+      "name": "audit_bridge_health",
+      "description": "Aggregate health report across every configured Keragon bridge: how many outgoing bridges exist, whether the inbound webhook is ready, how many inbound events arrived per event_kind, and which bridges have never produced a matching inbound callback (a signal a workflow's trigger URL may be broken or misconfigured). Keragon itself has no cross-bridge delivery-history view -- this is built entirely from what Imperal has recorded on its own side.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "description": "Empty params for read-only calls that take no arguments.",
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "outgoing_bridge_count": {
+            "default": 0,
+            "title": "Outgoing Bridge Count",
+            "type": "integer"
+          },
+          "inbound_configured": {
+            "default": false,
+            "title": "Inbound Configured",
+            "type": "boolean"
+          },
+          "inbound_event_count_total": {
+            "default": 0,
+            "title": "Inbound Event Count Total",
+            "type": "integer"
+          },
+          "inbound_event_kinds": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Inbound Event Kinds",
+            "type": "object"
+          },
+          "silent_bridges": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Silent Bridges",
+            "type": "array"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "title": "BridgeHealthReport",
+        "type": "object"
+      },
+      "event": "",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "keragon"
+    }
+  ],
+  "signals": [],
+  "schedules": [],
+  "required_scopes": [],
+  "icon_size_bytes": 426,
+  "webhooks": [
+    {
+      "path": "/inbound",
+      "method": "POST",
+      "secret_header": ""
+    }
+  ],
+  "lifecycle": {
+    "health_check": {
+      "interval_sec": 60
+    }
+  },
+  "secrets": [
+    {
+      "name": "keragon_outgoing_bridges",
+      "description": "Your configured outgoing bridges to Keragon workflows -- stored as a JSON array, one entry per bridge, each with its own HTTP Webhook Trigger URL. Managed through create_outgoing_bridge / update_outgoing_bridge / delete_outgoing_bridge -- you should not need to edit this directly.",
+      "required": false,
+      "write_mode": "both",
+      "max_bytes": 65536,
+      "scope": "user",
+      "rotation_hint_days": 180
+    },
+    {
+      "name": "keragon_inbound_shared_secret",
+      "description": "The shared secret Keragon's HTTP Client action must send back in a header to prove a callback is genuinely from your Keragon workflow. Managed through set_inbound_secret / regenerate_inbound_secret.",
+      "required": false,
+      "write_mode": "both",
+      "max_bytes": 4096,
+      "scope": "user",
+      "rotation_hint_days": 90
+    }
+  ],
+  "panels": [
+    {
+      "panel_id": "secrets",
+      "slot": "right",
+      "title": "Secrets",
+      "tree": {},
+      "icon": "KeyRound",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
+      "panel_id": "keragon_connect",
+      "slot": "left",
+      "title": "Keragon",
+      "tree": {},
+      "icon": "🏥",
+      "refresh": "manual",
+      "center_overlay": false,
+      "default_width": 320,
+      "min_width": 260,
+      "max_width": 420
+    },
+    {
+      "panel_id": "keragon_connect_help",
+      "slot": "center",
+      "title": "How Keragon Connector works",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "keragon_center",
+      "slot": "center",
+      "title": "Keragon",
+      "tree": {},
+      "icon": "🏥",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "keragon_settings",
+      "slot": "center",
+      "title": "App settings",
+      "tree": {},
+      "icon": "⚙️",
+      "refresh": "manual",
+      "center_overlay": true
+    }
+  ]
+}
