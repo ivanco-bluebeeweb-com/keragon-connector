@@ -4,13 +4,16 @@ Keragon workflows) and the inbound shared secret (Keragon -> Imperal),
 plus the recent inbound events log. Split out of panels.py per the same
 convention as Zapier Webhook's / Make.com Connector's panels_settings.py.
 
-Per ~/UI_INTERFACE_STANDARD.md: every ui.Form here is full_width so its
-container stretches to the entire sidebar/dialog width, and its own
-input children are also full_width. Every input carries a real label (a
-ui.Text caption above it) in addition to a placeholder written for this
-app's own domain -- never a bare placeholder standing in for a label,
-never a generic example. "How to" instructions live only in the
-center-overlay help dialog (keragon_connect_help), not duplicated here.
+Per ~/UI_INTERFACE_STANDARD.md: every ui.Form here has its container
+stretched to the entire sidebar/dialog width by the Panel app itself
+(ui.Form/ui.Stack take no full_width kwarg -- that stretch is automatic
+inside a Dialog's content slot, confirmed against the platform's own DUI
+component contract during this app's own deploy validation). Every input
+carries a real label (a ui.Text caption above it) in addition to a
+placeholder written for this app's own domain -- never a bare
+placeholder standing in for a label, never a generic example. "How to"
+instructions live only in the center-overlay help dialog
+(keragon_connect_help), not duplicated here.
 """
 from __future__ import annotations
 
@@ -36,10 +39,11 @@ def _outgoing_section(bridges: list) -> ui.UINode:
             ui.ListItem(
                 id=b.id, title=b.name,
                 subtitle=b.description or "No description",
-                trailing=ui.Button(
-                    "Delete", variant="ghost", size="sm", icon="trash-2",
-                    on_click=ui.Call("delete_outgoing_bridge", bridge_id=b.id),
-                ),
+                actions=[{
+                    "icon": "Trash2", "label": "Delete",
+                    "on_click": ui.Call("delete_outgoing_bridge", bridge_id=b.id),
+                    "confirm": f"Delete bridge \"{b.name}\"?",
+                }],
             )
             for b in bridges
         ]
@@ -48,37 +52,33 @@ def _outgoing_section(bridges: list) -> ui.UINode:
         rows.append(ui.Text("No bridges configured yet.", variant="caption"))
 
     rows.append(ui.Form(
-        full_width=True,
         children=[
-            ui.Stack(direction="v", gap=1, align="stretch", full_width=True, children=[
+            ui.Stack(direction="v", gap=1, align="stretch", children=[
                 ui.Text("Bridge name", variant="caption"),
                 ui.Input(
                     placeholder="New patient intake",
                     param_name="name",
-                    full_width=True,
                 ),
             ]),
-            ui.Stack(direction="v", gap=1, align="stretch", full_width=True, children=[
+            ui.Stack(direction="v", gap=1, align="stretch", children=[
                 ui.Text("Keragon HTTP Webhook Trigger URL", variant="caption"),
                 ui.Input(
                     placeholder="https://hook.keragon.com/trigger/...",
                     param_name="webhook_url",
-                    full_width=True,
                 ),
             ]),
-            ui.Stack(direction="v", gap=1, align="stretch", full_width=True, children=[
+            ui.Stack(direction="v", gap=1, align="stretch", children=[
                 ui.Text("Description (optional)", variant="caption"),
                 ui.Input(
                     placeholder="Fires when a new patient submits the intake form",
                     param_name="description",
-                    full_width=True,
                 ),
             ]),
         ],
         submit_label="Add bridge",
         action="create_outgoing_bridge",
     ))
-    return ui.Stack(direction="v", gap=2, align="stretch", full_width=True, children=rows)
+    return ui.Stack(direction="v", gap=2, align="stretch", children=rows)
 
 
 def _inbound_section(configured: bool, webhook_url: str) -> ui.UINode:
@@ -113,7 +113,7 @@ def _inbound_section(configured: bool, webhook_url: str) -> ui.UINode:
             "Generate shared secret", variant="primary", size="sm", full_width=True,
             icon="key", on_click=ui.Call("regenerate_inbound_secret"),
         ))
-    return ui.Stack(direction="v", gap=2, align="stretch", full_width=True, children=rows)
+    return ui.Stack(direction="v", gap=2, align="stretch", children=rows)
 
 
 def _recent_events_section(events: list) -> ui.UINode:
@@ -161,7 +161,7 @@ async def keragon_settings_panel(ctx, **kwargs) -> object:
     except Exception:
         events = []
 
-    content = ui.Stack(direction="v", gap=4, align="stretch", full_width=True, children=[
+    content = ui.Stack(direction="v", gap=4, align="stretch", children=[
         _outgoing_section(bridges),
         ui.Divider(),
         _inbound_section(in_status.configured, in_status.webhook_url),
