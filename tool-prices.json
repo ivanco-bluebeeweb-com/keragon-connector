@@ -1,0 +1,14 @@
+{
+  "create_outgoing_bridge": 16,
+  "list_outgoing_bridges": 8,
+  "get_outgoing_bridge": 8,
+  "update_outgoing_bridge": 16,
+  "delete_outgoing_bridge": 16,
+  "send_bridge_event": 16,
+  "bulk_send_bridge_event": 60,
+  "get_inbound_webhook_config": 8,
+  "regenerate_inbound_secret": 16,
+  "list_inbound_events": 8,
+  "get_inbound_event": 8,
+  "audit_bridge_health": 40
+}
