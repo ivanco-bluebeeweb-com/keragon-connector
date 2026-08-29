@@ -81,6 +81,10 @@ async def keragon_connect_panel(ctx, **kwargs) -> object:
             "How this works", variant="ghost", size="sm", full_width=True,
             icon="help-circle", on_click=ui.Call("__panel__keragon_connect_help"),
         ),
+        ui.Button(
+            "View bridge health", variant="primary", size="sm", full_width=True,
+            icon="Activity", on_click=ui.Call("__panel__keragon_center"),
+        ),
         _settings_button(),
     ]
     return ui.Stack(direction="v", gap=4, align="stretch", children=children)
@@ -136,7 +140,29 @@ async def keragon_center_panel(ctx, **kwargs) -> object:
     empty (not a caching issue) until center_overlay=True is set. Text is
     the shared canonical wording -- must stay identical across every app
     in this situation, not app-specific."""
-    return ui.Empty(
-        message="Nothing to show here -- this app is managed entirely from the sidebar.",
-        icon="👈",
-    )
+    import handlers_value_add as hv
+    from schemas import NoParams
+    result = await hv.audit_bridge_health(ctx, NoParams())
+    body: list[ui.UINode] = [ui.Text("Bridge health", variant="subtitle")]
+    if result.success and result.data:
+        r = result.data
+        body.append(ui.Stats(children=[
+            ui.Stat(label="Outgoing bridges", value=str(r.outgoing_bridge_count)),
+            ui.Stat(label="Inbound configured", value="Yes" if r.inbound_configured else "No"),
+            ui.Stat(label="Inbound events", value=str(r.inbound_event_count_total)),
+        ]))
+        if r.silent_bridges:
+            body.append(ui.Divider())
+            body.append(ui.Text("Silent bridges (no deliveries recorded)", variant="caption"))
+            for name in r.silent_bridges[:15]:
+                body.append(ui.Stack(direction="h", gap=2, align="center", children=[
+                    ui.Badge(label="SILENT", color="yellow"),
+                    ui.Text(name, variant="body"),
+                ]))
+        if r.detail:
+            body.append(ui.Divider())
+            body.append(ui.Text(r.detail, variant="body"))
+    else:
+        body.append(ui.Text("Could not load the bridge health audit.", variant="caption"))
+
+    return ui.Stack(direction="v", gap=3, align="stretch", children=body)
